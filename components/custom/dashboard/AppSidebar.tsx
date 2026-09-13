@@ -46,7 +46,7 @@ export function AppSidebar() {
                 <span>Agents</span>
             </SidebarMenuButton>
 
-            <SidebarMenuButton onClick={()=>router.push('/dashboard/run')} className={`h-12 gap-3 hover:bg-slate-100 ${path==('/dashboard/play')?'bg-slate-100':null}`}>
+            <SidebarMenuButton onClick={()=>router.push('/dashboard/runs')} className={`h-12 gap-3 hover:bg-slate-100 ${path==('/dashboard/runs')?'bg-slate-100':null}`}>
                 <div className="flex h-9 w-8 shrink-0 bg-red-100 items-center justify-center rounded-lg">
                     <Play className="h-[18px] w-[18px] text-red-900"/>
                 </div>
