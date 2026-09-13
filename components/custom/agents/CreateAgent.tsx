@@ -1,7 +1,9 @@
 'use client'
 import { Button } from '@/components/ui/button'
-import { ArrowUp, BriefcaseBusiness, Mail, Plus, Search } from 'lucide-react'
+import axios from 'axios'
+import { ArrowUp, BriefcaseBusiness, Loader2, Loader2Icon, Mail, Plus, Search } from 'lucide-react'
 import React, { useState } from 'react'
+import AIAgentQuestions from './AIAgentQuestions'
 
 const quickSuggestions = [
     {
@@ -26,7 +28,7 @@ const quickSuggestions = [
     },
 ]
 
-const templates=[
+const templates = [
     {
         title: "Find latest jobs",
         description: "Search the web for the latest jobs matching my profile",
@@ -56,10 +58,55 @@ const templates=[
     },
 ]
 
-function CreateAgent(){
+type AgentConfigResp = {
+    status: "needs_clarification" | "ready"
+    clarificationQuestions: clarificationQuestion,
+    config: any
+}
+
+export type ClarificationQuestion = {
+    id: string
+    question: string
+    type: "single_select" | "multi_select" | "text" | "number"
+    options: string[]
+    allowCustom: boolean
+    customPlaceholder: string
+}
+
+export type clarificationQuestion = ClarificationQuestion
+
+function CreateAgent() {
 
     const [prompt, setPrompt] = useState('')
-    return(
+    const [configResult, setConfigResult] = useState<AgentConfigResp | null>(null);
+    const [loading, setLoading] = useState(false);
+
+    const OnSubmit = async () => {
+        setLoading(true);
+        const result = await axios.post('/api/agent/configure', {
+            prompt: prompt
+        });
+
+        console.log(result.data);
+        setConfigResult(result.data);
+        setLoading(false);
+    }
+
+    const onComplete = async (ans: any) => {
+        console.log("OnComplete", ans);
+        setConfigResult(null);
+        const updatedPrompt = prompt + "\n" + JSON.stringify(ans);
+        setLoading(true);
+        const result = await axios.post('/api/agent/configure', {
+            prompt: updatedPrompt
+        });
+
+        console.log(result.data);
+        setConfigResult(result.data);
+        setLoading(false);
+    }
+
+    return (
         <div className='mt-5'>
             <div>
                 <h2 className='text-2xl font-semibold tracking-tight'>Create New Agent</h2>
@@ -72,44 +119,67 @@ function CreateAgent(){
                 <textarea placeholder='Describe the agent you want to create...'
                     className='min-h-[90px] w-full resize-none bg-transparent px-2 py-2 outline-none'
                     value={prompt}
-                    onChange={(event)=>setPrompt(event.target.value)}
-                    />
+                    onChange={(event) => setPrompt(event.target.value)}
+                />
                 <div className='flex justify-between items-center'>
                     <div>
                         <Button variant={'ghost'} size={'icon'}>
-                            <Plus/>
+                            <Plus />
                         </Button>
                     </div>
-                    <Button size={'icon'} className={'h-9 w-9 rounded-full bg-purple-600'}>
-                        <ArrowUp/>
+                    <Button
+                        disabled={loading}
+                        onClick={OnSubmit} size={'icon'} className={'h-9 w-9 rounded-full bg-purple-600'}>
+                        {loading ? <Loader2 className='animate-spin' /> : <ArrowUp />}
                     </Button>
                 </div>
             </div>
 
             <div className='mt-3 flex gap-2'>
-                {quickSuggestions.map((suggestion, index)=>(
+                {quickSuggestions.map((suggestion, index) => (
                     <Button key={index} variant={'outline'}
-                    onClick={()=>setPrompt(suggestion.prompt)}
-                    className='hover:tet-purple-700 hover:bg-purple-200 hover:border-purple-700'>
+                        onClick={() => setPrompt(suggestion.prompt)}
+                        className='hover:tet-purple-700 hover:bg-purple-200 hover:border-purple-700'>
                         {suggestion.label}
                     </Button>
                 ))}
             </div>
 
-            <div className='mt-10'>
-                <h2 className='flex text-lg justify-between items-center font-semibold'>Get started <span className='text-sm font-medium'>view all</span></h2>
-                <div className='grid grid-cols-1 gap-4 md:grid-cols-3 mt-3'>
-                    {templates.map((template, index)=>(
-                        <div className={`border rounded-2xl p-5 hover:cursor-pointer hover:shadow-lg ${template.border} ${template.glow}`}>
-                            <template.icon className={`h-12 w-12 p-2 ${template.iconBg} ${template.iconColor} rounded-xl`}/>
-                            <div className='mt-6'>
-                                <h2 className='font-semibold text-foreground'>{template.title}</h2>
-                                <p className='text-sm mt-2 leading-5 text-muted-foreground'>{template.description}</p>
+            {loading ? <div className='flex gap-2 items-center p-5 mt-7 border rounded-xl shadow'>
+                <Loader2Icon className='animate-spin' />
+                <h2>Generating Agent Config...</h2>
+            </div> :
+
+                !configResult && <div className='mt-10'>
+                    <h2 className='flex text-lg justify-between items-center font-semibold'>Get started <span className='text-sm font-medium'>view all</span></h2>
+                    <div className='grid grid-cols-1 gap-4 md:grid-cols-3 mt-3'>
+                        {templates.map((template, index) => (
+                            <div key={index} className={`border rounded-2xl p-5 hover:cursor-pointer hover:shadow-lg ${template.border} ${template.glow}`}>
+                                <template.icon className={`h-12 w-12 p-2 ${template.iconBg} ${template.iconColor} rounded-xl`} />
+                                <div className='mt-6'>
+                                    <h2 className='font-semibold text-foreground'>{template.title}</h2>
+                                    <p className='text-sm mt-2 leading-5 text-muted-foreground'>{template.description}</p>
+                                </div>
                             </div>
+                        ))}
+                    </div>
+                </div>}
+
+            {configResult &&
+                <div>
+                    {configResult.status == 'needs_clarification' && (
+                        <AIAgentQuestions
+                            questionList={configResult.clarificationQuestions}
+                            onComplete={onComplete}
+                        />
+                    )}
+                    {configResult.status == 'ready' && (
+                        <div className='p-5 border rounded-2xl mt-5 bg-slate-50'>
+                            <p className='break-all font-mono text-sm'>{JSON.stringify(configResult)}</p>
                         </div>
-                    ))}
+                    )}
                 </div>
-            </div>
+            }
         </div>
     )
 }
