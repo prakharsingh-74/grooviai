@@ -4,7 +4,7 @@ Groovi AI is a full-stack, state of the art AI Agent Configuration & Execution P
 
 ---
 
-## 🚀 Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 | :--- | :--- |
@@ -151,3 +151,6 @@ Run the seed migration in `db/migrations/001.sql` against your Neon Postgres dat
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### 6. Demo Video
+https://drive.google.com/file/d/1MRSRZMq8i_-yH-W5wdQT1iua0FI84nCi/view?usp=sharing
